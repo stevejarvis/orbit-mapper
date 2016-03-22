@@ -28,23 +28,17 @@ back the list of nodes that provide such a topology.
 
 For example, the query
 
-    GET http://console.grid.orbit-lab.org:4567/topology?2-1-1
+    GET http://console.grid.orbit-lab.org:4567/topology?<TODO I don't know how this will work yet>
 
 might return
 
-    192.168.0.8, 192.168.0.4, 192.168.0.12, 192.168.0.14
-
-which would be a topology where the 192.168.0.8, 192.168.0.4, and 192.168.0.12
-nodes are fully connected. The 192.168.0.12 and 192.168.0.14 nodes are
-connected, but 192.168.0.14 cannot reach 192.168.0.8.
+    <some collection of node addresses or IDs>
 
 Further, the tool is designed to run with as little setup as possible (no
 special image or distinct experiment) so that it integrates easily with existing
-experiments. This does require proper choice of interfaces to go over. Part of
-the mapper initialization will be to alter iptables to update the server process
-over the wired connections.
+experiments and Orbit images.
 
 ## Implementation
 
 Orbit mapper is written in Ruby, since that is the tool of choice for other
-tooling.
+Orbit tooling.
