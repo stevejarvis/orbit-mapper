@@ -15,17 +15,24 @@ rescue Timeout::Error, SocketError, Errno::ECONNREFUSED
   false
 end
 
-# Wait for server to come up.
-until serverup?(host, port)
-  puts "Waiting to rock until REST API is available"
+# TODO ping all other nodes in the network, figure out who is available.
+# Maybe continue forever, until the server is unreachable for 'x' consecutive
+# seconds?
+
+consecutive_fails = 0
+while consecutive_fails < 5 do
+  if serverup?(host, port)
+    consecutive_fails = 0
+    puts "Reporting data to server process"
+    http = Net::HTTP.new(host, port)
+    response = http.send_request('PUT', '/me?visible=192.168.0.1', 'body')
+    puts response.code
+
+    puts "Now requesting that info back"
+    response = http.send_request('GET', '/me')
+    puts "#{response.code} --> #{response.body}"
+  else
+    consecutive_fails += 1
+  end
   sleep(1)
 end
-
-puts "Reporting data to server process"
-http = Net::HTTP.new(host, port)
-response = http.send_request('PUT', '/me?visible=192.168.0.1', 'body')
-puts response.code
-
-puts "Now requesting that info back"
-response = http.send_request('GET', '/me')
-puts "#{response.code} --> #{response.body}"

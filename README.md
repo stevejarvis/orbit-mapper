@@ -42,3 +42,11 @@ experiments and Orbit images.
 
 Orbit mapper is written in Ruby, since that is the tool of choice for other
 Orbit tooling.
+
+### Required Gems
+
+* net-ssh
+* net-scp
+* sinatra
+* curses
+* thin
