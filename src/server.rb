@@ -8,8 +8,20 @@ require 'net/ssh'
 require 'net/scp'
 require 'net/http'
 require 'curses'
+require 'optparse'
 
 include Curses
+
+# Parse and set options
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: example.rb [options]"
+  opts.on('-c', '--curses', 'Curses') { |v| options[:curses] = v }
+end.parse!
+
+# Store all connectivity data.
+# TODO will probably need to make a threadsafe hash, but don't konw much about concurrency in Ruby yet.
+$connection_map = Hash.new
 
 # Sinatra REST setup.
 st = Thread.new do
@@ -19,6 +31,8 @@ st = Thread.new do
     set :server, :puma
     disable :traps
 
+    set :conn_map, $connection_map
+
     # Simple GET to ping root URL.
     get '/' do
       return "Hola"
@@ -27,16 +41,17 @@ st = Thread.new do
     # GET requests a particular topology, which we compute based on the current
     # known network graph.
     get '/:arg' do
-      # TODO Compute a topology here. Figure out how to get a variable in
-      # scope here.
+      # TODO Compute a topology here.
     end
 
     # PUT saves the supplied mapping information. The sender should include
     # a list of all nodes visible to it, stored by IP. Or ID? I don't know.
     put '/:sender' do
-      "Ok"
+      # Access the application scope with help from settings, otherwise
+      # we're in the request scope.
+      settings.conn_map[params['sender']] = params['visible']
+      "Thank you"
     end
-
   end
 
   MServer.run!
@@ -65,24 +80,31 @@ end
 def drawmap(win, context_x, context_y)
   win.box(?|, ?-)
   win.setpos(2,3)
-  win.addstr(`date`)
+  # TODO draw connectivity from the current context
+  win.addstr("#{$connection_map['me']}")
   win.refresh
 end
 
-sleep(2) # <-- hacky, to keep stdout off curses
-## Start curses
-init_screen
-begin
-  start_color
-  crmode
-  win = Window.new( 20, 40, (Curses.lines - 20) / 2, (Curses.cols - 40) / 2 )
-  while true do
-    drawmap(win, 1, 1)
-    sleep(2)
+# Start the curses visual
+def startcurses()
+  init_screen
+  begin
+    start_color
+    crmode
+    win = Window.new( 20, 40, (Curses.lines - 20) / 2, (Curses.cols - 40) / 2 )
+    while true do
+      drawmap(win, 1, 1)
+      sleep(2)
+    end
+  ensure
+    close_screen
+    win.close
   end
-ensure
-  close_screen
-  win.close
+end
+
+if options[:curses]
+  sleep(2) # <-- hacky, to keep stdout off curses
+  startcurses
 end
 
 st.join
