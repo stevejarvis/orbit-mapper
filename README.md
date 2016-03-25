@@ -45,8 +45,13 @@ Orbit tooling.
 
 ### Required Gems
 
+The console machine doesn't have all required gems available, nor does it have
+Internet access, so dependencies are included in deps/ and must be installed
+manually, e.g.:
+
+    gem install --user-install net-ssh-2.6.5.gem
+
 * net-ssh
 * net-scp
+* puma
 * sinatra
-* curses
-* thin

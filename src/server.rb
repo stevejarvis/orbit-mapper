@@ -15,9 +15,9 @@ include Curses
 st = Thread.new do
   class MServer < Sinatra::Base
     set :bind, '0.0.0.0'
-    set :server, 'thin'
     set :logging, nil
-    set :trap, false
+    set :server, :puma
+    disable :traps
 
     # Simple GET to ping root URL.
     get '/' do
@@ -46,15 +46,15 @@ end
 dt = Thread.new do
   # These ssh keys must be added to ssh-agent, net-ssh does not have its own
   # implementation of an agent.
-  nodes = [{'ip':'192.168.0.101', 'user':'pi', 'key':"#{ENV['HOME']}/.ssh/id_rsa"}]
+  nodes = [{'ip'=>'192.168.0.101', 'user'=>'pi', 'key'=>"#{ENV['HOME']}/.ssh/id_rsa"}]
 
   nodes.each do |node|
     dst_path = '/tmp/'
-    puts "Deploying to #{node[:ip]}:#{dst_path}"
-    Net::SCP.upload!(node[:ip], node[:user],
+    puts "Deploying to #{node['ip']}:#{dst_path}"
+    Net::SCP.upload!(node['ip'], node['user'],
                      "#{Dir.pwd}/src/client.rb", dst_path,
-                     :ssh => {:keys => [node[:key]]})
-    Net::SSH.start(node[:ip], node[:user], :keys => [node[:key]]) do |ssh|
+                     :ssh => {:keys => [node['key']]})
+    Net::SSH.start(node['ip'], node['user'], :keys => [node['key']]) do |ssh|
       ssh.exec "ruby #{dst_path}/client.rb &"
     end
   end
@@ -70,7 +70,7 @@ def drawmap(win, context_x, context_y)
 end
 
 sleep(2) # <-- hacky, to keep stdout off curses
-# Start curses
+## Start curses
 init_screen
 begin
   start_color
@@ -86,5 +86,4 @@ ensure
 end
 
 st.join
-# Won't actually join until all remote processes stop.
 dt.join
