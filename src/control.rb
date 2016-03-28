@@ -35,7 +35,7 @@ st = Thread.new do
 
     # Simple GET to ping root URL.
     get '/' do
-      return "Hola"
+      "Hola"
     end
 
     # GET requests a particular topology, which we compute based on the current
