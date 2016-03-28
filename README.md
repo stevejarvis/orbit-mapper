@@ -16,6 +16,12 @@ does not itself create any given topology, but determines the connectedness in
 the network and offers an API to find which set of nodes provides a desired
 graph.
 
+It is a goal of this tool to be as unobtrusive in experiments as possible.
+This includes adding minimal wireless traffic and requiring minimal
+changes to any existing OMF experiment description. This means, for example,
+interactions between the nodes and controller happen only over ethernet and
+no additional OML measurements need to be made.
+
 ## Design
 
 ![dia](https://github.com/stevejarvis/orbit-mapper/blob/master/docs/flow.png)
