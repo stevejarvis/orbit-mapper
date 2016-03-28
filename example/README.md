@@ -6,8 +6,11 @@ See documentation and resources at omf.mytestbed.net and oml.mytestbed.net.
 
 ## Building
 
-    oml2-scaffold --make --main --force map_experiment.rb
+    oml2-scaffold --make --main map_experiment.rb
     make
+
+Notice `oml2-scaffold` call will attempt to recreate the skeleton, so not really
+useful after development has taken place (at which time, just `make`).
 
 The development libraries don't seem to exist in Orbit Lab (at least not all
   resources), so build necessary oml2 libs and tools on a separate machine
