@@ -17,6 +17,9 @@ options = {}
 OptionParser.new do |opts|
   opts.banner = "Usage: example.rb [options]"
   opts.on('-c', '--curses', 'Curses') { |v| options[:curses] = v }
+  opts.on('-m address', '--master-address=address', 'Master') do |address|
+    options[:master_address] = address
+  end
 end.parse!
 
 # Store all connectivity data.
@@ -25,7 +28,7 @@ $connection_map = Hash.new
 
 # Sinatra REST setup.
 st = Thread.new do
-  class MServer < Sinatra::Base
+  class Restful < Sinatra::Base
     set :bind, '0.0.0.0'
     set :logging, nil
     set :server, :puma
@@ -40,8 +43,10 @@ st = Thread.new do
 
     # GET requests a particular topology, which we compute based on the current
     # known network graph.
-    get '/:arg' do
-      # TODO Compute a topology here.
+    get '/:context_node' do
+      # TODO Compute a topology here. For now, just return what the context node
+      # has reported as visible.
+      settings.conn_map[params['context_node']]
     end
 
     # PUT saves the supplied mapping information. The sender should include
@@ -54,7 +59,7 @@ st = Thread.new do
     end
   end
 
-  MServer.run!
+  Restful.run!
 end
 
 # Deploy and execute the client to gather information on the nodes.
@@ -67,10 +72,10 @@ dt = Thread.new do
     dst_path = '/tmp/'
     puts "Deploying to #{node['ip']}:#{dst_path}"
     Net::SCP.upload!(node['ip'], node['user'],
-                     "#{Dir.pwd}/src/client.rb", dst_path,
+                     "#{Dir.pwd}/src/nodes.rb", dst_path,
                      :ssh => {:keys => [node['key']]})
     Net::SSH.start(node['ip'], node['user'], :keys => [node['key']]) do |ssh|
-      ssh.exec "ruby #{dst_path}/client.rb &"
+      ssh.exec "ruby #{dst_path}/nodes.rb -m #{options[:master_address]} &"
     end
   end
 end

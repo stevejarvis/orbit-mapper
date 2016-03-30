@@ -1,9 +1,18 @@
 # Application to run on all nodes to determine connectivity.
 
 require 'net/http'
+require 'optparse'
 
-port = 4567
-host = '192.168.0.27'
+PORT = 4567
+
+# Parse and set options
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: example.rb [options]"
+  opts.on('-m address', '--master-address=address', 'Master') do |address|
+    options[:master_address] = address
+  end
+end.parse!
 
 # Helper to determine if the server is available yet.
 def serverup?(ip, port)
@@ -20,9 +29,9 @@ end
 
 consecutive_fails = 0
 while consecutive_fails < 5 do
-  if serverup?(host, port)
+  if serverup?(options[:master_address], PORT)
     consecutive_fails = 0
-    http = Net::HTTP.new(host, port)
+    http = Net::HTTP.new(options[:master_address], PORT)
 
     response = http.send_request('PUT', '/me?visible=192.168.0.1', 'body')
 
