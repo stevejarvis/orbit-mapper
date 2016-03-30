@@ -12,6 +12,9 @@ OptionParser.new do |opts|
   opts.on('-m address', '--master-address=address', 'Master') do |address|
     options[:master_address] = address
   end
+  opts.on('-d time', '--delay=time', 'Delay') do |time|
+    options[:delay] = Integer(time)
+  end
 end.parse!
 
 # Helper to determine if the server is available yet.
@@ -25,10 +28,10 @@ end
 
 # TODO ping all other nodes in the network, figure out who is available.
 # Maybe continue forever, until the server is unreachable for 'x' consecutive
-# seconds?
+# seconds? Get a connectivity raiting, out of 3 pings or so, maybe RTT and loss.
 
 consecutive_fails = 0
-while consecutive_fails < 5 do
+while consecutive_fails < 5 do # If we can't reach master, quit.
   if serverup?(options[:master_address], PORT)
     consecutive_fails = 0
     http = Net::HTTP.new(options[:master_address], PORT)
@@ -39,5 +42,5 @@ while consecutive_fails < 5 do
   else
     consecutive_fails += 1
   end
-  sleep(1)
+  sleep(options[:delay])
 end
