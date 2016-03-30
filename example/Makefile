@@ -7,8 +7,8 @@ RUNARGS = --loop --delay 1
 BINDIR = $(DESTDIR)/usr/local/bin/
 
 CFLAGS = -Wall -Werror -g -I. # -I/usr/local/include
-LDFLAGS = # -L/usr/local/lib
-LIBS = -loml2 -locomm -lpopt
+LDFLAGS = -L/usr/local/lib
+LIBS = -loml2 -locomm -lpopt -lcurl
 
 CCLD=$(CC)
 SCAFFOLD = /usr/local/bin/oml2-scaffold
