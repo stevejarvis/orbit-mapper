@@ -1,5 +1,5 @@
 # Orbit Mapper
-
+![build status](https://api.travis-ci.org/stevejarvis/orbit-mapper.svg)
 ## A tool to visualize and query topologies in the Orbit Lab.
 
 The Orbit Lab has means to set the topology in experiments via the experiment
