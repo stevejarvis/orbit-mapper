@@ -10,23 +10,28 @@ require 'net/http'
 require 'optparse'
 require 'json'
 
+require_relative '../lib/utils'
+
 # Parse and set options
 options = {}
 OptionParser.new do |opts|
   opts.banner = "Usage: example.rb [options]"
-  opts.on('-m address', '--master-address=address', 'Master') do |address|
-    options[:master_address] = address
+  opts.on('-m address', '--master-address=address', 'Address of controlling node') do |address|
+    options[:master_address] = String(address)
   end
-  opts.on('-n nodelist', '--node-list=nodelist', 'Node List') do |nodelist|
-    options[:nodelist] = nodelist
+  opts.on('-n nodelist', '--node-list=nodelist', 'List of nodes to map') do |nodelist|
+    options[:nodelist] = String(nodelist)
   end
-  opts.on('-d time', '--delay=time', 'Delay') do |time|
+  opts.on('-d time', '--delay=time', 'Delay between pings and updates') do |time|
     options[:delay] = Integer(time)
+  end
+  opts.on('-o fname', '--outfile=fname', 'File to output GEXF connection data') do |fname|
+    options[:outfile] = String(fname)
   end
 end.parse!
 
 # Store all connectivity data.
-# TODO will probably need to make a threadsafe hash, but don't konw much about concurrency in Ruby yet.
+# TODO will probably need to make a threadsafe hash, but don't know much about concurrency in Ruby yet.
 $connection_map = Hash.new
 
 def loadconfig(configfile)
@@ -40,18 +45,16 @@ def deploy(configfile, address, delay)
   h = loadconfig(configfile)
   h.each do |node|
     dst_path = '/tmp/'
-    puts "Deploying to #{node['address']}:#{dst_path}"
-    Net::SCP.upload!(node['address'], node['user'],
-                     "#{Dir.pwd}/src/nodes.rb", dst_path,
-                     :ssh => {:keys => [node['key']]})
-    Net::SSH.start(node['address'], node['user'], :keys => [node['key']]) do |ssh|
-      ssh.exec "ruby #{dst_path}/nodes.rb -m #{address} -d #{delay} &"
+    puts "Deploying nodes.rb to #{node['address']}:#{dst_path}"
+    Net::SCP.start(node['address'], node['user'], :keys => node['key']) do |scp|
+      # ! is blocking here
+      scp.upload!("#{Dir.pwd}/bin/nodes.rb", dst_path)
+    end
+    Net::SSH.start(node['address'], node['user'], :keys => node['key']) do |ssh|
+      ssh.exec("ruby #{dst_path}/nodes.rb -m #{address} -d #{delay} &")
+      # TODO this block isn't exiting?!
     end
   end
-end
-
-dt = Thread.new do
-  deploy(options[:nodelist], options[:master_address], options[:delay])
 end
 
 class Restful < Sinatra::Base
@@ -80,7 +83,7 @@ class Restful < Sinatra::Base
   put '/:sender' do
     # Access the application scope with help from settings, otherwise
     # we're in the request scope.
-    settings.conn_map[params['sender']] = params['visible']
+    settings.conn_map[params['sender']] = params['visible'].split(',')
     "Thank you"
   end
 
@@ -97,6 +100,23 @@ end
 
 puts "Using nodelist #{options[:nodelist]}"
 Restful.set :configfile, options[:nodelist]
-Restful.run!
+# Run the server in another thread.
+rt = Thread.new do
+  Restful.run!
+end
 
+dt = Thread.new do
+  deploy(options[:nodelist], options[:master_address], options[:delay])
+end
+
+# Now for the duration of the application, periodically write the current
+# connectivity data to a file.
+while true
+  out = dump_gexf($connection_map).target!
+  File.open(options[:outfile], 'w') { |file| file.write(out) }
+  puts "Updated #{options[:outfile]}"
+  sleep(options[:delay])
+end
+
+rt.join
 dt.join

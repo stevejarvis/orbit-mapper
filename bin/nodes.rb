@@ -29,6 +29,7 @@ end
 # TODO ping all other nodes in the network, figure out who is available.
 # Maybe continue forever, until the server is unreachable for 'x' consecutive
 # seconds? Get a connectivity raiting, out of 3 pings or so, maybe RTT and loss.
+# For now just placeholder logic.
 
 consecutive_fails = 0
 while consecutive_fails < 5 do # If we can't reach master, quit.
@@ -36,7 +37,7 @@ while consecutive_fails < 5 do # If we can't reach master, quit.
     consecutive_fails = 0
     http = Net::HTTP.new(options[:master_address], PORT)
 
-    response = http.send_request('PUT', '/me?visible=192.168.0.1', 'body')
+    response = http.send_request('PUT', '/me?visible=192.168.0.1,192.168.0.30', 'body')
 
     response = http.send_request('GET', '/me')
   else
