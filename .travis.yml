@@ -1,0 +1,12 @@
+language: ruby
+rvm:
+  - 1.9.3-p484
+install:
+  - gem install net-ssh
+  - gem install net-scp
+  - gem install net-ping
+  - gem install builder
+  - gem install puma
+  - gem install sinatra
+script:
+  - ruby test/tests.rb
