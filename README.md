@@ -24,7 +24,7 @@ no additional OML measurements need to be made.
 
 ## Design
 
-![dia](https://github.com/stevejarvis/orbit-mapper/blob/master/docs/flow.png)
+![dia](https://github.com/stevejarvis/orbit-mapper/blob/master/doc/flow.png)
 
 This mapping tool operates separately of the actual experiment. Once the
 experiment has completed setup (and initialized the wireless interfaces), the
