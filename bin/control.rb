@@ -57,7 +57,7 @@ def deploy(configfile, address, delay)
         ssh.scp.upload! "#{Dir.pwd}/bin/nodes.rb", dst_path
         # exec (no !) does not block
         # NOTE *should* not block. It seems the session (incorrectly) refuses
-        # to close without these bash trickeries to close stdin/stdout.
+        # to close without these bash trickeries to close stdin/stdout/stderr.
         ssh.exec "sh -c 'ruby #{dst_path}/nodes.rb -m #{address} -d #{delay} </dev/null >/dev/null 2>&1 &'"
       end
     end

@@ -1,6 +1,7 @@
 require 'builder'
 require 'test/unit'
 require_relative '../lib/utils.rb'
+require_relative '../bin/nodes.rb'
 
 class ControlTests < Test::Unit::TestCase
 
@@ -29,6 +30,23 @@ class ControlTests < Test::Unit::TestCase
     </edges>
   </graph>
 </gexf>\n")
+  end
+
+  def test_pingparse
+    input =
+      "PING localhost.localdomain (127.0.0.1) 56(84) bytes of data.
+       64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=1 ttl=64 time=0.035 ms
+       64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=2 ttl=64 time=0.052 ms
+       64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=3 ttl=64 time=0.037 ms
+       64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=4 ttl=64 time=0.036 ms
+       64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=5 ttl=64 time=0.036 ms
+
+       --- localhost.localdomain ping statistics ---
+       5 packets transmitted, 5 received, 0% packet loss, time 3999ms
+       rtt min/avg/max/mdev = 0.035/0.039/0.052/0.007 ms
+      "
+    assert_equal({'success'=>100, 'rtt'=>0.039},
+                 parseping(input))
   end
 
 end

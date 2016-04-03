@@ -59,5 +59,6 @@ manually, e.g.:
 
 * net-ssh
 * net-scp
+* builder
 * puma
 * sinatra
