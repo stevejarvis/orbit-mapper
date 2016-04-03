@@ -9,6 +9,8 @@ require 'net/scp'
 require 'net/http'
 require 'optparse'
 require 'json'
+require 'thread'
+require 'thwait'
 
 require_relative '../lib/utils'
 
@@ -30,6 +32,9 @@ OptionParser.new do |opts|
   end
 end.parse!
 
+@running = true
+@threads = Array.new
+
 # Store all connectivity data.
 # TODO will probably need to make a threadsafe hash, but don't know much about concurrency in Ruby yet.
 $connection_map = Hash.new
@@ -46,13 +51,15 @@ def deploy(configfile, address, delay)
   h.each do |node|
     dst_path = '/tmp/'
     puts "Deploying nodes.rb to #{node['address']}:#{dst_path}"
-    Net::SCP.start(node['address'], node['user'], :keys => node['key']) do |scp|
-      # ! is blocking here
-      scp.upload!("#{Dir.pwd}/bin/nodes.rb", dst_path)
-    end
-    Net::SSH.start(node['address'], node['user'], :keys => node['key']) do |ssh|
-      ssh.exec("ruby #{dst_path}/nodes.rb -m #{address} -d #{delay} &")
-      # TODO this block isn't exiting?!
+    @threads << Thread.new do
+      Net::SSH.start(node['address'], node['user'], :keys => [node['key']]) do |ssh|
+        # ! is blocking here
+        ssh.scp.upload! "#{Dir.pwd}/bin/nodes.rb", dst_path
+        # exec (no !) does not block
+        # NOTE *should* not block. It seems the session (incorrectly) refuses
+        # to close without these bash trickeries to close stdin/stdout.
+        ssh.exec "sh -c 'ruby #{dst_path}/nodes.rb -m #{address} -d #{delay} </dev/null >/dev/null 2>&1 &'"
+      end
     end
   end
 end
@@ -62,7 +69,7 @@ class Restful < Sinatra::Base
   set :bind, '0.0.0.0'
   set :logging, true
   set :server, :puma
-  enable :traps
+  disable :traps
 
   set :conn_map, $connection_map
 
@@ -101,22 +108,26 @@ end
 puts "Using nodelist #{options[:nodelist]}"
 Restful.set :configfile, options[:nodelist]
 # Run the server in another thread.
-rt = Thread.new do
+@threads << Thread.new do
   Restful.run!
 end
 
-dt = Thread.new do
-  deploy(options[:nodelist], options[:master_address], options[:delay])
+puts "Deploying and staring node application on all nodes"
+deploy(options[:nodelist], options[:master_address], options[:delay])
+
+# catch interrupt and stop
+trap 'SIGINT' do
+  puts "Exiting..."
+  @running = false
+  Restful.quit!
+  ThreadsWait.all_waits(*@threads)
 end
 
 # Now for the duration of the application, periodically write the current
 # connectivity data to a file.
-while true
+while @running
   out = dump_gexf($connection_map).target!
   File.open(options[:outfile], 'w') { |file| file.write(out) }
   puts "Updated #{options[:outfile]}"
   sleep(options[:delay])
 end
-
-rt.join
-dt.join
