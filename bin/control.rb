@@ -75,7 +75,7 @@ class Restful < Sinatra::Base
 
   # Simple GET to ping root URL.
   get '/' do
-    getnodes
+    getnodesjson
   end
 
   # GET requests a particular topology, which we compute based on the current
@@ -90,16 +90,16 @@ class Restful < Sinatra::Base
   put '/:sender' do
     # Access the application scope with help from settings, otherwise
     # we're in the request scope.
-    settings.conn_map[params['sender']] = params['visible'].split(',')
-    "Thank you"
+    settings.conn_map[params['sender']] = JSON.parse(params['visible'])
+    "Thanks"
   end
 
   # Enumerate only the node addresses, return JSON string.
-  def getnodes()
+  def getnodesjson()
     res = []
     h = JSON.parse(File.read(settings.configfile))
     h.each do |node|
-      res.push({'address'=>node['address']})
+      res.push({'address'=>node['address'], 'int'=>node['int']})
     end
     res.to_json
   end
