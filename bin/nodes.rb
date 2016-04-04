@@ -56,31 +56,34 @@ end
 # Upload the current network view from this perspective to the controller.
 # Map is actually a list of hashes with connectivity metrics (addresses, rtt,
 # drop rate).
-def report_connectivity(connectivity_map)
-  http = Net::HTTP.new(options[:master_address], PORT)
+def report_connectivity(controller, connectivity_map)
   me = `hostname`.chomp
-  response = http.send_request('PUT', "/#{me}?visible=#{connectivity_map.to_json}", 'body')
+  req = Net::HTTP::Post.new("/#{me}", initheader = {'Content-Type'=>'application/json'})
+  req.body = connectivity_map.to_json
+  response = Net::HTTP.start(controller, PORT) do |http|
+    http.request(req)
+  end
   response.code == '200'
 end
 
-def run!
+def run!(controller, delay, interface=nil)
   consecutive_fails = 0
   while consecutive_fails < 5 do # If we can't reach master, quit after a while.
-    nodelist = serverup?(options[:master_address], PORT)
+    nodelist = serverup?(controller, PORT)
     if nodelist
       consecutive_fails = 0
       connectivity = Array.new
       nodelist.each do |node|
-        connectivity << pingnode(node[:address], node[:int])
+        connectivity << pingnode(node['address'], interface)
       end
-      report_connectivity(connectivity)
+      report_connectivity(controller, connectivity)
     else
       consecutive_fails += 1
     end
-    sleep(options[:delay])
+    sleep(delay)
   end
 end
 
 if __FILE__ == $0
-  run!
+  run!(options[:master_address], options[:delay])
 end

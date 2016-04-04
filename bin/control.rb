@@ -68,7 +68,6 @@ class Restful < Sinatra::Base
   # Sinatra REST setup.
   set :bind, '0.0.0.0'
   set :logging, true
-  set :server, :puma
   disable :traps
 
   set :conn_map, $connection_map
@@ -85,12 +84,12 @@ class Restful < Sinatra::Base
     settings.conn_map[params['context_node']]
   end
 
-  # PUT saves the supplied mapping information. The sender should include
-  # a list of all nodes visible to it, stored by IP. Or ID? I don't know.
-  put '/:sender' do
+  # POST saves the supplied mapping information. The sender should include
+  # JSON information on connectivity to all nodes.
+  post '/:sender' do
     # Access the application scope with help from settings, otherwise
     # we're in the request scope.
-    settings.conn_map[params['sender']] = JSON.parse(params['visible'])
+    settings.conn_map[params['sender']] = JSON.parse(request.body.read)
     "Thanks"
   end
 
@@ -127,7 +126,7 @@ end
 # connectivity data to a file.
 while @running
   out = dump_gexf($connection_map).target!
-  File.open(options[:outfile], 'w') { |file| file.write(out) }
-  puts "Updated #{options[:outfile]}"
+  File.open("#{options[:outfile]}.gexf", 'w') { |file| file.write(out) }
+  puts "Updated #{options[:outfile]}.gexf"
   sleep(options[:delay])
 end
