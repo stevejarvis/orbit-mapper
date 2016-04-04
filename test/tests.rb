@@ -11,7 +11,7 @@ class ControlTests < Test::Unit::TestCase
                  'node2'=>[ { 'address'=>'node0', 'success'=>95, 'rtt'=>0.56 }, { 'address'=>'node1', 'success'=>99, 'rtt'=>0.21 } ] }
     # Excuse the indentation
     assert_equal("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<gexf xmlns=\"http://www.gexf.net/1.2draft\" version=\"1.2\">\n  "\
-                 "<meta lastmodifieddate=\"2016-03-04\">\n    <creator>Orbit Mapper</creator>\n    "\
+                 "<meta lastmodifieddate=\"#{Time.now.strftime("%Y-%d-%m")}\">\n    <creator>Orbit Mapper</creator>\n    "\
                  "<description>Current state of known network connectedness.</description>\n  "\
                  "</meta>\n  <graph mode=\"static\" defaultedgetype=\"directed\">\n    <nodes>\n      "\
                  "<node id=\"node0\" label=\"node0\"/>\n      <node id=\"node1\" label=\"node1\"/>\n      "\
