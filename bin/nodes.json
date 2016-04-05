@@ -1,4 +1,0 @@
-[
-  {"address":"192.168.0.101", "user":"pi", "key":"/home/sjarvis/.ssh/id_rsa", "int":"eth0"},
-  {"address":"192.168.0.31", "user":"sjarvis", "key":"/home/sjarvis/.ssh/id_rsa", "int":"wlp2s0"}
-]

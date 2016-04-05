@@ -27,8 +27,10 @@ def dump_gexf(connectivity_map)
         connectivity_map.each do |key, val|
           # Also edges element
           val.each do |info|
-            xml.edge( :id => count, :source => key, :target => info['address'] )
-            count += 1
+            if info['address'].to_s != ''
+                xml.edge( :id => count, :source => key, :target => info['address'] )
+                count += 1
+            end
           end
         end
       end

@@ -36,7 +36,6 @@ end.parse!
 @threads = Array.new
 
 # Store all connectivity data.
-# TODO will probably need to make a threadsafe hash, but don't know much about concurrency in Ruby yet.
 $connection_map = Hash.new
 
 def loadconfig(configfile)
@@ -52,7 +51,7 @@ def deploy(configfile, address, delay)
     dst_path = '/tmp/'
     puts "Deploying nodes.rb to #{node['address']}:#{dst_path}"
     @threads << Thread.new do
-      Net::SSH.start(node['address'], node['user'], :keys => [node['key']]) do |ssh|
+      Net::SSH.start(node['address'], node['user'], :keys => [node['key']], :paranoid => false) do |ssh|
         # ! is blocking here
         ssh.scp.upload! "#{Dir.pwd}/bin/nodes.rb", dst_path
         # exec (no !) does not block
@@ -125,6 +124,7 @@ end
 # Now for the duration of the application, periodically write the current
 # connectivity data to a file.
 while @running
+  # TODO add a mutex here for threadsafe hash
   out = dump_gexf($connection_map).target!
   File.open("#{options[:outfile]}.gexf", 'w') { |file| file.write(out) }
   puts "Updated #{options[:outfile]}.gexf"
