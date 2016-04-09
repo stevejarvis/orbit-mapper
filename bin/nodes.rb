@@ -16,6 +16,9 @@ OptionParser.new do |opts|
   opts.on('-d time', '--delay=time', 'Delay between pings') do |time|
     options[:delay] = Integer(time)
   end
+  opts.on('-i int', '--interface=int', 'Interface to use for pings') do |int|
+    options[:interface] = int
+  end
 end.parse!
 
 # Helper to determine if the controller's web server is available yet.
@@ -74,7 +77,10 @@ def run!(controller, delay, interface=nil)
       consecutive_fails = 0
       connectivity = Array.new
       nodelist.each do |node|
-        connectivity << pingnode(node['address'], interface)
+        ping_results = pingnode(node['address'], interface)
+        # Keep the hostname, since it usually looks better in the final map.
+        ping_results[:host] = node['host']
+        connectivity << ping_results
       end
       report_connectivity(controller, connectivity)
     else
@@ -85,5 +91,5 @@ def run!(controller, delay, interface=nil)
 end
 
 if __FILE__ == $0
-  run!(options[:master_address], options[:delay])
+  run!(options[:master_address], options[:delay], options[:interface])
 end

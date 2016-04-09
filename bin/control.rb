@@ -34,6 +34,7 @@ end.parse!
 
 @running = true
 @threads = Array.new
+$semaphore = Mutex.new
 
 # Store all connectivity data.
 $connection_map = Hash.new
@@ -49,9 +50,9 @@ def deploy(configfile, address, delay)
   h = loadconfig(configfile)
   h.each do |node|
     dst_path = '/tmp/'
-    puts "Deploying nodes.rb to #{node['address']}:#{dst_path}"
+    puts "Deploying nodes.rb to #{node['host']}:#{dst_path}"
     @threads << Thread.new do
-      Net::SSH.start(node['address'], node['user'], :keys => [node['key']], :paranoid => false) do |ssh|
+      Net::SSH.start(node['host'], node['user'], :keys => [node['key']], :paranoid => false) do |ssh|
         # ! is blocking here
         ssh.scp.upload! "#{Dir.pwd}/bin/nodes.rb", dst_path
         # exec (no !) does not block
@@ -70,6 +71,7 @@ class Restful < Sinatra::Base
   disable :traps
 
   set :conn_map, $connection_map
+  set :lock, $semaphore
 
   # Simple GET to ping root URL.
   get '/' do
@@ -80,7 +82,7 @@ class Restful < Sinatra::Base
   # known network graph.
   get '/:context_node' do
     # Return what the context node has reported as visible.
-    settings.conn_map[params['context_node']]
+    settings.conn_map[params['context_node']].to_json
   end
 
   # POST saves the supplied mapping information. The sender should include
@@ -88,7 +90,9 @@ class Restful < Sinatra::Base
   post '/:sender' do
     # Access the application scope with help from settings, otherwise
     # we're in the request scope.
-    settings.conn_map[params['sender']] = JSON.parse(request.body.read)
+    settings.lock.synchronize {
+      settings.conn_map[params['sender']] = JSON.parse(request.body.read)
+    }
     "Thanks"
   end
 
@@ -97,7 +101,7 @@ class Restful < Sinatra::Base
     res = []
     h = JSON.parse(File.read(settings.configfile))
     h.each do |node|
-      res.push({'address'=>node['address'], 'int'=>node['int']})
+      res.push({'host'=>node['host'], 'address'=>node['address'], 'int'=>node['int']})
     end
     res.to_json
   end
@@ -124,9 +128,10 @@ end
 # Now for the duration of the application, periodically write the current
 # connectivity data to a file.
 while @running
-  # TODO add a mutex here for threadsafe hash
-  out = dump_gexf($connection_map).target!
-  File.open("#{options[:outfile]}.gexf", 'w') { |file| file.write(out) }
+  $semaphore.synchronize {
+    out = dump_gexf($connection_map).target!
+    File.open("#{options[:outfile]}.gexf", 'w') { |file| file.write(out) }
+  }
   puts "Updated #{options[:outfile]}.gexf"
   sleep(options[:delay])
 end
