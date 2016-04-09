@@ -14,6 +14,11 @@ def dump_gexf(connectivity_map)
 
     xml.graph( :mode => "static", :defaultedgetype => "directed" ) do
 
+      xml.attributes do
+        xml.attribute( :id => 0, :title => "success", :type => "float" )
+        xml.attribute( :id => 1, :title => "rtt", :type => "float" )
+      end
+
       # Add nodes section
       xml.nodes do
         connectivity_map.each do |key, vals|
@@ -28,8 +33,13 @@ def dump_gexf(connectivity_map)
           # Also edges element
           val.each do |info|
             if info['address'].to_s != ''
-                xml.edge( :id => count, :source => key, :target => info['address'] )
-                count += 1
+              xml.edge( :id => count, :source => key, :target => info['address'] ) do
+                xml.attvalues do
+                  xml.attvalue( :for => 0, :value => info['success'] )
+                  xml.attvalue( :for => 1, :value => info['rtt'] )
+                end
+              end
+              count += 1
             end
           end
         end
