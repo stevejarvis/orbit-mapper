@@ -1,5 +1,5 @@
 # Orbit Mapper
-![build status](https://api.travis-ci.org/stevejarvis/orbit-mapper.svg)
+[![build status](https://api.travis-ci.org/stevejarvis/orbit-mapper.svg)](https://travis-ci.org/stevejarvis/orbit-mapper)
 ## A tool to visualize and query topologies in the Orbit Lab.
 
 The Orbit Lab has means to set the topology in experiments via the experiment
@@ -29,20 +29,29 @@ no additional OML measurements need to be made.
 This mapping tool operates separately of the actual experiment. Once the
 experiment has completed setup (and initialized the wireless interfaces), the
 mapper will start to build a view of the network, after which time the
-experiment script can query the offered API with a desired topology and receive
-back the list of nodes that provide such a topology.
+experiment script can query the offered API with a node identifier and receive
+information on the connectivity of that node.
 
 For example, the query
 
-    GET http://console.grid.orbit-lab.org:4567/topology?<TODO I don't know how this will work yet>
+    GET http://console.grid.orbit-lab.org:4567/node1-2
 
 might return
 
-    <some collection of node addresses or IDs>
+    [
+      {"success":80,"rtt":1.024,"address":"192.168.0.1","host":"node1-1"},
+      {"success":60,"rtt":1.358,"address":"192.168.0.3","host":"node1-3"},
+      {"success":100,"rtt":1.709,"address":"192.168.0.4","host":"node1-4"},
+      {"success":100,"rtt":0.885,"address":"192.168.0.5","host":"node2-1"},
+      {"success":80,"rtt":1.59,"address":"192.168.0.6","host":"node-2"}
+    ]
+
+Indicating the connection information to each of those particular nodes, from
+the context of node1-2.
 
 Further, the tool is designed to run with as little setup as possible (no
-special image or distinct experiment) so that it integrates easily with existing
-experiments and Orbit images.
+special image or distinct experiment) so that it integrates relatively easily
+with existing experiments and Orbit images.
 
 ## Implementation
 
