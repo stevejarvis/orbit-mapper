@@ -4,9 +4,7 @@ rvm:
 install:
   - gem install net-ssh -v 2.9.2
   - gem install net-scp -v 1.2.1
-  - gem install net-ping -v 1.7.8
   - gem install builder -v 3.2.2
-  - gem install puma -v 3.2.0
   - gem install sinatra -v 1.4.7
 script:
   - ruby test/tests.rb
