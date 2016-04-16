@@ -7,4 +7,5 @@ install:
   - gem install builder -v 3.2.2
   - gem install sinatra -v 1.4.7
 script:
+  - echo "Ping is at "`which ping`
   - ruby test/tests.rb
