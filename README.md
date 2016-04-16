@@ -22,6 +22,9 @@ changes to any existing OMF experiment description. This means, for example,
 interactions between the nodes and controller happen only over ethernet and
 no additional OML measurements need to be made.
 
+## Getting Started
+See the [tutorial on the wiki](https://github.com/stevejarvis/orbit-mapper/wiki/Tutorial) for complete startup instructions in Orbit Lab.
+
 ## Design
 
 ![dia](https://github.com/stevejarvis/orbit-mapper/blob/master/doc/flow.png)
