@@ -4,8 +4,6 @@ require 'net/http'
 require 'optparse'
 require 'json'
 
-PORT = 4567
-
 # Parse and set options
 options = {}
 OptionParser.new do |opts|
@@ -18,6 +16,9 @@ OptionParser.new do |opts|
   end
   opts.on('-i int', '--interface=int', 'Interface to use for pings') do |int|
     options[:interface] = int
+  end
+  opts.on('-p port', '--bind-port=port', 'Port to use to contact controller') do |port|
+    options[:bind_port] = Integer(port)
   end
 end.parse!
 
@@ -59,20 +60,20 @@ end
 # Upload the current network view from this perspective to the controller.
 # Map is actually a list of hashes with connectivity metrics (addresses, rtt,
 # drop rate).
-def report_connectivity(controller, connectivity_map)
+def report_connectivity(controller, port, connectivity_map)
   me = `hostname`.chomp
   req = Net::HTTP::Post.new("/#{me}", initheader = {'Content-Type'=>'application/json'})
   req.body = connectivity_map.to_json
-  response = Net::HTTP.start(controller, PORT) do |http|
+  response = Net::HTTP.start(controller, port) do |http|
     http.request(req)
   end
   response.code == '200'
 end
 
-def run!(controller, delay, interface=nil)
+def run!(controller, delay, port, interface=nil)
   consecutive_fails = 0
   while consecutive_fails < 5 do # If we can't reach master, quit after a while.
-    nodelist = serverup?(controller, PORT)
+    nodelist = serverup?(controller, port)
     if nodelist
       consecutive_fails = 0
       connectivity = Array.new
@@ -82,7 +83,7 @@ def run!(controller, delay, interface=nil)
         ping_results[:host] = node['host']
         connectivity << ping_results
       end
-      report_connectivity(controller, connectivity)
+      report_connectivity(controller, port, connectivity)
     else
       consecutive_fails += 1
     end
@@ -91,5 +92,5 @@ def run!(controller, delay, interface=nil)
 end
 
 if __FILE__ == $0
-  run!(options[:master_address], options[:delay], options[:interface])
+  run!(options[:master_address], options[:delay], options[:bind_port], options[:interface])
 end

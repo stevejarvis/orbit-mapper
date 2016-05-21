@@ -17,6 +17,9 @@ require_relative '../lib/utils'
 # Parse and set options
 options = {}
 OptionParser.new do |opts|
+  # Defaults
+  options[:bind_port] = 4567
+
   opts.banner = "Usage: example.rb [options]"
   opts.on('-m address', '--master-address=address', 'Address of controlling node') do |address|
     options[:master_address] = String(address)
@@ -30,11 +33,15 @@ OptionParser.new do |opts|
   opts.on('-o fname', '--outfile=fname', 'File to output GEXF connection data') do |fname|
     options[:outfile] = String(fname)
   end
+  opts.on('-p port', '--bind-port=port', 'Port on which the service will listen') do |port|
+    options[:bind_port] = Integer(port)
+  end
 end.parse!
 
 @running = true
 @threads = Array.new
 $semaphore = Mutex.new
+$bind_port = options[:bind_port]
 
 # Store all connectivity data.
 $connection_map = Hash.new
@@ -44,7 +51,7 @@ def loadconfig(configfile)
 end
 
 # Deploy and execute the client to gather information on the nodes.
-def deploy(configfile, address, delay)
+def deploy(configfile, address, delay, port)
   # The ssh keys must be added to ssh-agent, net-ssh does not have its own
   # implementation of an agent.
   h = loadconfig(configfile)
@@ -58,7 +65,7 @@ def deploy(configfile, address, delay)
         # exec (no !) does not block
         # NOTE *should* not block. It seems the session (incorrectly) refuses
         # to close without these bash trickeries to close stdin/stdout/stderr.
-        ssh.exec "sh -c 'ruby #{dst_path}/nodes.rb -m #{address} -d #{delay} </dev/null >/dev/null 2>&1 &'"
+        ssh.exec "sh -c 'ruby #{dst_path}/nodes.rb -m #{address} -d #{delay} -p #{port} </dev/null >/dev/null 2>&1 &'"
       end
     end
   end
@@ -72,6 +79,7 @@ class Restful < Sinatra::Base
 
   set :conn_map, $connection_map
   set :lock, $semaphore
+  set :port, $bind_port
 
   # Simple GET to ping root URL.
   get '/' do
@@ -115,7 +123,7 @@ Restful.set :configfile, options[:nodelist]
 end
 
 puts "Deploying and staring node application on all nodes"
-deploy(options[:nodelist], options[:master_address], options[:delay])
+deploy(options[:nodelist], options[:master_address], options[:delay], options[:bind_port])
 
 # catch interrupt and stop
 trap 'SIGINT' do
